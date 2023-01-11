@@ -11,6 +11,6 @@ urlpatterns=[
     path('register',views.registration_view,name='register'),
     path('login',obtain_auth_token,name='login'),
     # path('login',ObtainAuthTokenView.as_view(),name='login'),
-    # path('properties/update',update_account_view,name='update'),
-    # path('properties',account_properties_view,name='properties'),
+    path('properties/update',views.update_account_view,name='update'),
+    path('properties',views.account_properties_view,name='properties'),
 ]

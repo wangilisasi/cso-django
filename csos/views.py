@@ -4,8 +4,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated,AllowAny
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.pagination import PageNumberPagination
 from .models import Cso
 from .serializer import CsoSerializer
+from rest_framework.generics import ListAPIView
+from rest_framework.filters import SearchFilter, OrderingFilter
 # Create your views here.
 
 @api_view(['GET',])
@@ -118,5 +122,16 @@ def delete_cso(request,pk):
         else:
             data["faulure"]="Failed to delete record"
         return Response(data=data)
+
+class APICsoListView(ListAPIView):
+    queryset=Cso.objects.all()
+    serializer_class=CsoSerializer
+    authentication_classes=(TokenAuthentication,)
+    permission_classes=(AllowAny,)
+    pagination_class=PageNumberPagination
+    filter_backends=(SearchFilter,OrderingFilter,)
+    search_fields=['name','description','author__username']
+
+
 
     
