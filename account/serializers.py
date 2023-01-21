@@ -14,8 +14,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
         def save(self):
             account=Account(
-                email=self.validated_data['email'],
-                username=self.validated_data['username'],
+                email=self.validated_data['email'].lower(),
+                username=self.validated_data['username'].lower(),
             )
             password=self.validated_data['password']
             password2=self.validated_data['password2']
@@ -32,3 +32,7 @@ class AccountPropertiesSerializer(serializers.ModelSerializer):
         model=Account
         fields=['pk','username','email']
 
+class ChangePasswordSerializer(serializers.Serializer):
+	old_password 				= serializers.CharField(required=True)
+	new_password 				= serializers.CharField(required=True)
+	confirm_new_password 		= serializers.CharField(required=True)

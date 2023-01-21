@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
 from .models import Cso
-from .serializer import CsoSerializer
+from .serializer import CsoSerializer, CsoUpdateSerializer,CsoCreateSerializer
 from rest_framework.generics import ListAPIView
 from rest_framework.filters import SearchFilter, OrderingFilter
 # Create your views here.
@@ -23,28 +23,6 @@ def get_cso(request):
         serializer = CsoSerializer(cso, many=True)
         return Response(serializer.data)
 
-@api_view(['POST',])
-@permission_classes([IsAuthenticated])
-def add_cso(request):
-    if request.method == 'POST':
-
-        data=request.data
-        print(data)
-        data['author'] = request.user.pk
-        print(data)
-
-        serializer = CsoSerializer(data=data)
-
-        data_r = {}
-        if serializer.is_valid():
-            cso=serializer.save()
-            # data_r['response'] = "Created succesfully"
-            # data_r['pk'] = cso.pk
-            # data_r['title'] = cso.name
-            # data_r['body'] = cso.description
-            # data_r['username'] = cso.author.username
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # @api_view(['PUT'])
 # def update_cso(request,pk):
@@ -132,6 +110,76 @@ class APICsoListView(ListAPIView):
     filter_backends=(SearchFilter,OrderingFilter,)
     search_fields=['name','description','author__username']
 
+@api_view(['PUT',])
+@permission_classes((IsAuthenticated,))
+def api_update_cso_view(request, pk):
+
+	try:
+		cso = Cso.objects.get(pk=pk)
+	except Cso.DoesNotExist:
+		return Response(status=status.HTTP_404_NOT_FOUND)
+
+	user = request.user
+	if cso.author != user:
+		return Response({'response':"You don't have permission to edit that."}) 
+		
+	if request.method == 'PUT':
+		serializer = CsoUpdateSerializer(cso, data=request.data, partial=True)  #Partial=true gives permission to update only some of the fiedlds
+		data = {}
+		if serializer.is_valid():
+			serializer.save()
+			data['response'] = "UPDATE_SUCCESS"
+			data['pk'] = cso.pk
+			data['title'] = cso.name
+			data['body'] = cso.description
+			data['date_updated'] = cso.date_updated
+			# image_url = str(request.build_absolute_uri(Cso.image.url))
+			# if "?" in image_url:
+			# 	image_url = image_url[:image_url.rfind("?")]
+			# data['image'] = image_url
+			data['username'] = cso.author.username
+			return Response(data=data)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes((IsAuthenticated,))
+def api_create_cso_view(request):
+
+	if request.method == 'POST':
+		data = request.data
+		data['author'] = request.user.pk
+		serializer = CsoCreateSerializer(data=data)
+
+		data = {}
+		if serializer.is_valid():
+			cso = serializer.save()
+			data['response'] = "CREATE_SUCCESS"
+			data['pk'] = cso.pk
+			data['name'] = cso.name
+			data['description'] = cso.description
+			data['date_updated'] = cso.date_updated
+			# image_url = str(request.build_absolute_uri(blog_post.image.url))
+			# if "?" in image_url:
+			# 	image_url = image_url[:image_url.rfind("?")]
+			# data['image'] = image_url
+			data['username'] = cso.author.username
+			return Response(data=data)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET',])
+@permission_classes((IsAuthenticated,))
+def api_is_author_of_blogpost(request, pk):
+	try:
+		cso = Cso.objects.get(pk=pk)
+	except Cso.DoesNotExist:
+		return Response(status=status.HTTP_404_NOT_FOUND)
+
+	data = {}
+	user = request.user
+	if cso.author != user:
+		data['response'] = "You don't have permission to edit that."
+		return Response(data=data)
+	data['response'] = "You have permission to edit that."
+	return Response(data=data)
     
